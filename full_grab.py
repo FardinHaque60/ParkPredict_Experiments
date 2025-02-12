@@ -73,4 +73,5 @@ def fetch_parking_data(request):
 if __name__ == "__main__":
     req = input("Would you like to mock scrape the request (0) or get live data (1)?: ")
     # TODO write loop for this to run every hour between 9am - 6pm
+    # TODO allow user to specify interval, time range to take data points
     fetch_parking_data(req)
