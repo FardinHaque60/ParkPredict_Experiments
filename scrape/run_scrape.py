@@ -9,8 +9,8 @@ req = None
 user_limit = 1
 
 def run_task():
-    global count, req
-    print(f"Request made on {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    global count, req, user_limit
+    print(f"Request {count}/{user_limit} made on {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     fetch_parking_data(req)
     count += 1 
 
@@ -39,7 +39,7 @@ if __name__ == "__main__":
             schedule.run_pending()
             time.sleep(60)  # Check every minute
             if (count >= user_limit):
-                print(f"Reached user limit {user_limit}. Exiting...")
+                print(f"Reached user limit: {user_limit}. Exiting...")
                 break
 
     run_task()  # Run the task once if not in schedule mode
