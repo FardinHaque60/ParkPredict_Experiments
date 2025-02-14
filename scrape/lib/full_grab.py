@@ -24,7 +24,7 @@ def splitter(user_input):
     elif user_input in ("1", "2"): # if user requests to get live data or schedule
         print("Fetching live data...")
         try:
-            response = requests.get(URL, headers=HEADERS, verify=False)
+            response = requests.get(URL, headers=HEADERS, verify=False, timeout=10) 
             response.raise_for_status()  # Raise an error for bad status codes
             return response.text
         except requests.RequestException as e:
