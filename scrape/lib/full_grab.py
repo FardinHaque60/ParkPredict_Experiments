@@ -1,33 +1,42 @@
 import requests
-import re
 from bs4 import BeautifulSoup
+import re
+from .file_writer import file_write
 
-def fetch_parking_data(request):
-    # final static variables for mock or network request
-    MOCK_FILE = "temp.html"
-    URL = "https://sjsuparkingstatus.sjsu.edu/"
-    HEADERS = {"User-Agent": "Mozilla/5.0"}  # Mimic a browser request
+# global count var to timeout scraping after a while
+limit = 0
 
-    response_text = None  # Initialize response_text variable
+# final static variables for mock or network request
+MOCK_FILE = "static/temp.html"
+URL = "https://sjsuparkingstatus.sjsu.edu/"
+HEADERS = {"User-Agent": "Mozilla/5.0"}  # Mimic a browser request
 
-    if request == "0":
+# take in user input and based on mock, live, or schedule return response data
+def splitter(user_input):
+    if user_input == "0":
+        print("Mocking request...")
         try:
             with open(MOCK_FILE, "r", encoding="utf-8") as file:
-                response_text = file.read()
+                return file.read()
         except IOError as e:
             print(f"Error reading mock data file: {e}")
             return
-    elif request == "1":
+    elif user_input in ("1", "2"): # if user requests to get live data or schedule
+        print("Fetching live data...")
         try:
             response = requests.get(URL, headers=HEADERS, verify=False)
-            response_text = response.text
             response.raise_for_status()  # Raise an error for bad status codes
+            return response.text
         except requests.RequestException as e:
             print(f"Error fetching data: {e}")
             return
     else: 
-        print("Invalid input. Please enter 0 or 1.")
+        print("Something went wrong.")
         return
+
+# writes to csv based on data fetch
+def fetch_parking_data(request):
+    response_text = splitter(request) # take the request and fetch the data accordingly
 
     if (not response_text):
         print("Error getting response text.")
@@ -61,17 +70,8 @@ def fetch_parking_data(request):
 
         garages.append([timestamp, name, fullness])
     
-    # Write to file using entries in garages list
-    try:
-        with open("parking_data.csv", "a") as file:
-            for entry in garages:
-                file.write(",".join(entry) + "\n")
-        print(f"Data appended to parking_data.csv for time {timestamp} \n")
-    except IOError as e:
-        print(f"Error writing to file: {e}")
-
-if __name__ == "__main__":
-    req = input("Would you like to mock scrape the request (0) or get live data (1)?: ")
-    # TODO write loop for this to run every hour between 9am - 6pm
-    # TODO allow user to specify interval, time range to take data points
-    fetch_parking_data(req)
+    print(f"Website timestamp: {timestamp}.")
+    for garage in garages:
+        print(f"Garage: {garage[1]}, Fullness: {garage[2]}%")
+    file_write(garages)  # Call file_write function to write data to file
+    print("---------------------------------------")
