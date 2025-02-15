@@ -1,0 +1,1 @@
+# TODO read day of the week when reading from csv
