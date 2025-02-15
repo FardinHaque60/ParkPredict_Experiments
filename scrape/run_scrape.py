@@ -1,4 +1,4 @@
-from lib import fetch_parking_data
+from lib import fetch_parking_data, write_schedule
 import schedule
 import random
 import time
@@ -17,12 +17,15 @@ def run_task():
 def schedule_tasks():
     global user_limit
     schedule.clear()  # Clear previous schedules
-    print(f"Task schedule everyday from 6 AM to 11 PM until {user_limit} data points are reached:")
+    schedule_list = []
+    print(f"Scheduling tasks everyday from 6 AM to 11 PM until {user_limit} data points are reached.")
     for hour in range(6, 24):  # 6 AM to 11 PM
         minutes = random.sample(range(0, 60), 2)  # Pick two random minutes
         for minute in minutes:
             schedule.every().day.at(f"{hour:02d}:{minute:02d}").do(run_task)
-            print(f"Task scheduled for {hour:02d}:{minute:02d}")
+            schedule_list.append(f"Task scheduled for {hour:02d}:{minute:02d}")
+            # print(f"Task scheduled for {hour:02d}:{minute:02d}")
+    write_schedule(schedule_list)  # Write schedule to file
 
 if __name__ == "__main__":
     req = input("Would you like to mock scrape the request (0), get live data once (1), or schedule the script to run (2)?: ")
