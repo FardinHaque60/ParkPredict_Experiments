@@ -3,7 +3,14 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # Load dataset (update filename if needed)
-df = pd.read_csv("/Users/sarvesh/sarvystuff/portfolio/SJSUpp/ParkPredict/scrape/out/2025-02-18_13-53-06_parking_data.csv", header=None, names=["timestamp", "garage", "fullness_percentage"])
+dir = "../scrape/out/" # TODO iterate through all files in this directory
+
+# get working directory
+import os
+wdir = os.getcwd()
+file = wdir + "/scrape/out/2025-03-01_11-38-19_parking_data.csv" # dynamically updates working directory based on who is running it
+
+df = pd.read_csv(file, header=None, names=["timestamp", "garage", "fullness_percentage"])
 
 # Convert timestamp to datetime format
 df["timestamp"] = pd.to_datetime(df["timestamp"])
