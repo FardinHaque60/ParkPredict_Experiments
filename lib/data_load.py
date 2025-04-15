@@ -16,6 +16,6 @@ def load_data(data_folder_dir):
     )
 
     # sort data in ascending order by timestamp
-    all_data['timestamp'] = pd.to_datetime(all_data['timestamp'])
+    all_data['timestamp'] = pd.to_datetime(all_data['timestamp'], format="%Y-%m-%d %I:%M:%S %p")
     all_data = all_data.sort_values(by='timestamp')
     return all_data
