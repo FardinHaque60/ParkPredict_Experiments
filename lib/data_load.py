@@ -43,6 +43,7 @@ def load_week_data(
         end_date = date_start + pd.Timedelta(days=5)
         end_dates.append(end_date)
         date_start += pd.Timedelta(days=7)
+
     print("Start Dates:", start_dates)
     print("End Dates:", end_dates)
     # return list
@@ -57,7 +58,6 @@ def load_week_data(
         week_data = all_data[(all_data['timestamp'] >= start_date) & (all_data['timestamp'] <= end_date)]
         for garage in week_data_by_garage.keys():
             garage_data = week_data[week_data['garage name'] == garage]
-            if not garage_data.empty:
-                week_data_by_garage[garage].append(garage_data)
+            week_data_by_garage[garage].append(garage_data)
                 
-    return week_data_by_garage    
+    return start_dates, end_dates, week_data_by_garage    
