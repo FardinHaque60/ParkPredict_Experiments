@@ -4,12 +4,11 @@ import pandas as pd
 TIMESTAMP_FORMAT = "%Y-%m-%d %I:%M:%S %p"
 
 # TODO modify data load so it normalized timestamps in return dataframe
-def load_data( 
-        date_start=pd.to_datetime("2025-03-10 12:00:00 AM", format=TIMESTAMP_FORMAT), 
-        date_end=pd.to_datetime("2025-03-14 12:00:00 AM", format=TIMESTAMP_FORMAT)
-    ):
-    wdir = os.path.dirname(os.path.abspath(__file__))
-    data_folder_dir = wdir + "/../scrape/out/"  
+def load_data(data_folder_dir=None, date_start=None, date_end=None):
+    if data_folder_dir is None:
+        wdir = os.path.dirname(os.path.abspath(__file__))
+        data_folder_dir = wdir + "/../scrape/out/"
+    
     column_headers = ["timestamp", "garage name", "fullness"]
 
     all_data = pd.concat(
@@ -23,8 +22,10 @@ def load_data(
 
     # sort data in ascending order by timestamp
     all_data['timestamp'] = pd.to_datetime(all_data['timestamp'], format=TIMESTAMP_FORMAT)
-    # apply date filtering
-    all_data = all_data[(all_data['timestamp'] >= date_start) & (all_data['timestamp'] <= date_end)]
+    
+    # apply date filtering if dates are provided
+    if date_start is not None and date_end is not None:
+        all_data = all_data[(all_data['timestamp'] >= date_start) & (all_data['timestamp'] <= date_end)]
     
     all_data = all_data.sort_values(by='timestamp')
     return all_data

@@ -1,71 +1,124 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, render_template
 import os
 import sys
 from datetime import datetime, timedelta
 import numpy as np
 import joblib
 from typing import Dict, List, Optional
+from sklearn.ensemble import RandomForestRegressor
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from experiments.sinregoutput import get_sinusoidal_params
+from experiments.sinregoutput import get_sinusoidal_params, sinusoidal_model
 
 app = Flask(__name__)
 
 # In-memory storage for predictions history
 prediction_history: List[Dict] = []
 
+# Dictionary to store sinusoidal parameters for each garage
+sinusoidal_params = {}
+
+# List of all available garages
+ALL_GARAGES = ["North Garage", "South Garage", "West Garage", "South Campus Garage"]
+
+def load_sinusoidal_params():
+    """
+    Load sinusoidal parameters for all garages
+    """
+    global sinusoidal_params
+    try:
+        params = get_sinusoidal_params()
+        # Update the global parameters with all available garages
+        sinusoidal_params = params
+        print(f"Successfully loaded sinusoidal parameters for garages: {', '.join(params.keys())}")
+        return True
+    except Exception as e:
+        print(f"Error loading sinusoidal parameters: {str(e)}")
+        return False
+
 def get_minutes_from_week_start(timestamp: datetime) -> float:
     """
     Convert a timestamp to minutes from the start of the week (Monday 12 AM)
     """
-    # Convert timestamp to datetime if it's a string
     if isinstance(timestamp, str):
         timestamp = datetime.fromisoformat(timestamp)
     
-    week_start = timestamp - timedelta(days=timestamp.weekday(), 
-                                     hours=timestamp.hour,
-                                     minutes=timestamp.minute,
-                                     seconds=timestamp.second,
-                                     microseconds=timestamp.microsecond)
+    week_start = timestamp.replace(hour=0, minute=0, second=0, microsecond=0)
+    week_start = week_start - timedelta(days=timestamp.weekday())
     minutes_diff = (timestamp - week_start).total_seconds() / 60
     return minutes_diff
 
-def predict_sinusoidal(minutes: float) -> float:
+def predict_sinusoidal(minutes: float, garage: str) -> float:
     """
-    Make prediction using sinusoidal model
+    Make prediction using sinusoidal model for specified garage
     """
     try:
-        params = get_sinusoidal_params()
-        # Use the sinusoidal model function
-        return float(sinusoidal_model(minutes, *params))
-    except Exception as e: 
+        if garage not in sinusoidal_params:
+            raise ValueError(f"Predictions not available for {garage}. Currently only supporting: {', '.join(sinusoidal_params.keys())}")
+        
+        params = sinusoidal_params[garage]
+        prediction = sinusoidal_model(minutes, *params)
+        return float(prediction)
+    except Exception as e:
         print(f"Error in predict_sinusoidal: {str(e)}")
-        # Return a default prediction if there's an error
-        return 50.0  # Default to 50% fullness
+        raise
 
 @app.route('/')
 def home():
-    return jsonify({
-        "status": "active",
-        "message": "ParkPredict API",
-        "endpoints": {
-            "/predict": "POST - Get parking prediction",
-            "/predictions": "GET - Get prediction history",
-            "/predictions/<garage>": "GET - Get predictions for specific garage",
-            "/weights": "GET - Get model weights"
-        }
-    })
+    # Load models if not already loaded
+    if not sinusoidal_params:
+        load_success = load_sinusoidal_params()
+        if not load_success:
+            return render_template('error.html', 
+                                message="Failed to load prediction models. Please try again later.")
+    
+    return render_template('index.html', 
+                         all_garages=ALL_GARAGES,
+                         available_garages=list(sinusoidal_params.keys()),
+                         prediction_history=prediction_history[-5:])  # Show last 5 predictions
+
+@app.route('/load_models', methods=['POST'])
+def load_models_endpoint():
+    try:
+        success = load_sinusoidal_params()
+        if not success:
+            return jsonify({
+                "error": "Failed to load models. Please check the server logs for details."
+            }), 500
+            
+        return jsonify({
+            "status": "success",
+            "message": "Sinusoidal parameters loaded successfully",
+            "available_garages": list(sinusoidal_params.keys())
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/predict', methods=['POST'])
 def predict():
     try:
+        if not sinusoidal_params:
+            success = load_sinusoidal_params()
+            if not success:
+                return jsonify({
+                    "error": "Failed to load models. Please try again later."
+                }), 500
+        
         data = request.get_json()
         
-        # Validate input
-        if not all(k in data for k in ['timestamp', 'garage', 'model']):
+        if 'timestamp' not in data:
             return jsonify({
-                "error": "Missing required fields",
-                "required_fields": ["timestamp", "garage", "model"]
+                "error": "Missing required field: timestamp"
+            }), 400
+            
+        if 'garage' not in data:
+            return jsonify({
+                "error": "Missing required field: garage"
+            }), 400
+            
+        if data['garage'] not in sinusoidal_params:
+            return jsonify({
+                "error": f"Predictions not available for {data['garage']}. Currently only supporting: {', '.join(sinusoidal_params.keys())}"
             }), 400
         
         # Parse timestamp
@@ -76,32 +129,17 @@ def predict():
                 "error": "Invalid timestamp format. Use ISO format (YYYY-MM-DDTHH:MM:SS)"
             }), 400
         
-        # Validate garage
-        valid_garages = ["North Garage", "South Garage", "West Garage", "South Campus Garage"]
-        if data['garage'] not in valid_garages:
-            return jsonify({
-                "error": "Invalid garage",
-                "valid_garages": valid_garages
-            }), 400
-        
         # Get minutes from week start
         minutes = get_minutes_from_week_start(timestamp)
         
-        # Get prediction
-        if data['model'] == 'sinusoidal':
-            prediction = predict_sinusoidal(minutes)
-        else:
-            return jsonify({
-                "error": "Unsupported model type",
-                "supported_models": ["sinusoidal"]
-            }), 400
+        # Make prediction
+        prediction = predict_sinusoidal(minutes, data['garage'])
         
         # Store prediction in history
         prediction_record = {
             "timestamp": data['timestamp'],
             "garage": data['garage'],
-            "predicted_fullness": float(prediction),
-            "model_used": data['model'],
+            "predicted_fullness": prediction,
             "prediction_time": datetime.now().isoformat()
         }
         prediction_history.append(prediction_record)
@@ -168,15 +206,19 @@ def get_garage_predictions(garage):
 @app.route('/weights', methods=['GET'])
 def weights_endpoint():
     """
-    Get the sinusoidal regression weights
+    Get the sinusoidal regression weights for all garages
     """
     try:
-        params = get_sinusoidal_params()
         return jsonify({
-            "sinusoidal_regression_weights": params.tolist()
+            "sinusoidal_regression_weights": {
+                garage: params.tolist() 
+                for garage, params in sinusoidal_params.items()
+            }
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
+    # Create templates directory if it doesn't exist
+    os.makedirs(os.path.join(os.path.dirname(__file__), 'templates'), exist_ok=True)
     app.run(debug=True, host='0.0.0.0', port=5001)
