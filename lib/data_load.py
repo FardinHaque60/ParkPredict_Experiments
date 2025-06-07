@@ -32,20 +32,23 @@ def load_data(
 # takes in a date start and garage name
 # loads data in 5 week slides from date_start to end of data set for specific garage
 def load_week_data(
-        date_start=pd.to_datetime("2025-02-17 12:00:00 AM", format=TIMESTAMP_FORMAT),
+        date_start=pd.to_datetime("2025-02-10 12:00:00 AM", format=TIMESTAMP_FORMAT),
         date_end=pd.to_datetime("2025-12-31 12:00:00 AM", format=TIMESTAMP_FORMAT)
         ):
     start_dates  = []
     end_dates = []
     all_data = load_data(date_start=date_start, date_end=date_end)
-    while any(all_data['timestamp'] >= date_start):
-        start_dates.append(date_start)
-        end_date = date_start + pd.Timedelta(days=5)
-        end_dates.append(end_date)
+    # if any data exists in the week that starts at the ith week, add it to the list
+    while date_start < date_end:
+        # if no data in this week, skip
+        if any((all_data['timestamp'] >= date_start) & (all_data['timestamp'] <= date_start+pd.Timedelta(days=5))):
+            start_dates.append(date_start)
+            end_date = date_start + pd.Timedelta(days=5)
+            end_dates.append(end_date)
         date_start += pd.Timedelta(days=7)
 
-    print("Start Dates:", start_dates)
-    print("End Dates:", end_dates)
+    # print("Start Dates:", start_dates)
+    # print("End Dates:", end_dates)
     # return list
     week_data_by_garage = {
         "North Garage": [],
