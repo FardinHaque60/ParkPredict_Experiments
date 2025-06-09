@@ -1,7 +1,7 @@
 import numpy as np
 
 # calc rmse values by comparing predicted vals with raw_data['fullness']
-# assuming raw_data is DataFrame with 'fullness' and normalized 'time' columns 
+# assuming raw_data and predicted_vals are lists with expected and predicted values respectively
 def rmse_validation(raw_data, predicted_vals):
     if len(raw_data) != len(predicted_vals):
         raise ValueError("Length of raw_data and predicted_vals must be the same.")
