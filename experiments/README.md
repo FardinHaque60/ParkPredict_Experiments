@@ -8,9 +8,6 @@ experiments are set up by loading data, training models, and performing inferenc
 - guassion regression
 - decision tree regression
 - sinusoidal regression
-<br> still need to do: 
-- support vector regression 
-- bayesian regression
 - generalized additive model
 
 ## performance measure

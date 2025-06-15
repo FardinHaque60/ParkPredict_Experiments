@@ -105,3 +105,15 @@ def test_and_eval(garage, start_dates, x_data, y_data, model, model_weights=[]):
 
 def format_for_model(input:list):
     return np.array(input).reshape(-1, 1)
+
+def export_models(model_name, full_models, partition_models):
+    base_file_path = f"../models/{model_name}/"
+    # export fully trained model
+    with open(base_file_path + f"{model_name}.pkl", "wb") as f:
+        pickle.dump(full_models, f)
+    print("wrote fully trained models")
+
+    # export partition trained models
+    with open(base_file_path + f"{model_name}_p.pkl", "wb") as f:
+        pickle.dump(partition_models, f)
+    print("wrote partition trained models")
