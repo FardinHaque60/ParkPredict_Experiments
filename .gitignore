@@ -1,5 +1,6 @@
 # ignore generated datasets
 datasets/
+models/
 
 # ignore for mac
 .DS_Store
