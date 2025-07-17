@@ -1,5 +1,6 @@
 # ignore generated datasets
 datasets/
+joblib_models/
 models/
 
 # ignore for mac
