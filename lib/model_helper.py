@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import itertools
 from validation import rmse_validation, mae_validation, r2_validation
 import pickle
+import joblib
 
 ''' params:
 - garage: garage name to select dataset from
@@ -117,3 +118,13 @@ def export_models(model_name, full_models, partition_models):
     with open(base_file_path + f"{model_name}_p.pkl", "wb") as f:
         pickle.dump(partition_models, f)
     print("wrote partition trained models")
+
+def export_models_with_joblib(model_name, full_models, partition_models):
+    base_file_path = f"../joblib_models/{model_name}/"
+    # export fully trained model
+    joblib.dump(full_models, base_file_path + f"{model_name}.pkl")
+    print("wrote fully trained models with joblib")
+
+    # export partition trained models
+    joblib.dump(partition_models, base_file_path + f"{model_name}_p.pkl")
+    print("wrote partition trained models with joblib")
