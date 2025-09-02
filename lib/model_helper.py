@@ -5,6 +5,9 @@ import itertools
 from validation import rmse_validation, mae_validation, r2_validation
 import pickle
 import joblib
+from datetime import datetime
+
+FIG_OUT_PATH = "./out/"
 
 ''' params:
 - garage: garage name to select dataset from
@@ -48,7 +51,9 @@ def load_and_format_data(garage, start_date, end_date, partition_details:str=Non
 
 def test_and_eval(garage, start_dates, x_data, y_data, model, model_weights=[]):
 ## plot predictions and expected values
-    # generate x_stream from lowest to highest val in x_data to plot across
+    current_time_str = datetime.now().strftime("%m-%d-%Y_%I:%M_%p")
+
+    # generate x_stream from start of monday to end of thursday
     x_end = pd.Timedelta(days=4).total_seconds() / 60
     all_x_vals = np.linspace(0, x_end, num=1000)
     
@@ -71,8 +76,8 @@ def test_and_eval(garage, start_dates, x_data, y_data, model, model_weights=[]):
     plt.ylabel('Fullness')
     plt.title(f'Predictions and Actual Fullness for {garage}')
     plt.legend(loc='upper right', bbox_to_anchor=(1.45, 1))
+    plt.savefig(FIG_OUT_PATH + f"{current_time_str}_{garage}_{start_dates[0].strftime('%Y-%m-%d')}_plot.png", bbox_inches="tight")
     plt.show()
-    # plt.savefig(path)
 
 ## plot difference plot using y_data in stat params
     for i in range(len(x_data)):
@@ -88,6 +93,7 @@ def test_and_eval(garage, start_dates, x_data, y_data, model, model_weights=[]):
     plt.ylabel('Difference (prediction - actual)')
     plt.title(f'Difference between predicted and actual fullness for {garage}')
     plt.legend(loc='upper right', bbox_to_anchor=(1.45, 1))
+    plt.savefig(FIG_OUT_PATH + f"{current_time_str}_{garage}_{start_dates[0].strftime('%Y-%m-%d')}_residual.png", bbox_inches="tight")
     plt.show()
 
 ## compute stats
