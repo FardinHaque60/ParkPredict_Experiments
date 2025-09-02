@@ -1,7 +1,7 @@
 # ignore generated datasets
 datasets/
 joblib_models/
-models/
+pickle_models/
 
 # ignore for mac
 .DS_Store
